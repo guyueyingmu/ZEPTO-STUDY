@@ -1,1 +1,1 @@
-# Zepto-style
+# Zepto-study
