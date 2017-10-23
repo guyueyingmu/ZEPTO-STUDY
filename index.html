@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>zepto</title>
+   <script src="./zepto@1.1.6.js"></script>
+  </head>
+  <body>
+   <ul>
+     <li id="id1" class="li2">1</li>
+     <li id="id2" class="li2">2</li>
+     <li class="li2">3</li>
+     <li class="li2">4</li>
+     <li class="li2">5</li>
+     <li id="id6" class="li2">6</li>
+     <li class="li2">7</li>
+     <li class="li2">8</li>
+   </ul>
+   <li class="other"></li>
+    <script>
+         function print(param){
+             console.log(param);
+         }
+         console.log($(".li2"));
+         console.log($('.li2').toArray());
+         console.log($(".li2").get(3));
+         $('.li2').each(function(item){
+            console.log(item);
+         })
+         console.log($('.li2').filter('#id6'));
+         console.log($('.li2').add('.other'));
+         print($('.li2').is('#id1'));
+         print($('.li2').not(function(idx){return idx == 5}));
+         print($(".li2").not($("#id6")))
+
+
+    </script>
+  </body>
+</html>

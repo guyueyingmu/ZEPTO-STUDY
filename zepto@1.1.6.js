@@ -48,6 +48,7 @@ var Zepto = (function() {
       function(object){ return object instanceof Array }
 
   zepto.matches = function(element, selector) {
+    // 只有当两个参数都存在，第一个参数是元素节点是情况下，进行匹配
     if (!selector || !element || element.nodeType !== 1) return false
     var matchesSelector = element.webkitMatchesSelector || element.mozMatchesSelector ||
                           element.oMatchesSelector || element.matchesSelector
@@ -60,6 +61,8 @@ var Zepto = (function() {
     return match
   }
 
+
+//  ligyon
   function type(obj) {
     return obj == null ? String(obj) :
       class2type[toString.call(obj)] || "object"
@@ -84,6 +87,8 @@ var Zepto = (function() {
            .replace(/_/g, '-')
            .toLowerCase()
   }
+
+   // 利用filter 实现数组去重
   uniq = function(array){ return filter.call(array, function(item, idx){ return array.indexOf(item) == idx }) }
 
   function classRE(name) {
@@ -154,7 +159,11 @@ var Zepto = (function() {
   // Explorer. This method can be overriden in plugins.
   zepto.Z = function(dom, selector) {
     dom = dom || []
-    dom.__proto__ = $.fn            // fn 替换掉 dom 的原型
+    // 所有通过函数 new 出来的东西都有一个_proto_ 指向这个函数的prototype 的原型
+    // prototype  （显示原型）   __proto__ 隐式原型;
+    // 如果没有为一个对象指定原型，那么他将会使用 __proto__ 的默认值 Object.prototype;
+    // Object.prototype 对象自身也有一个 __proto__ 属性，这是原型链的终点并且为null;
+    dom.__proto__ = $.fn           // fn 替换掉 dom 的原型 数组也是对象，可以在数组对象上添加属性 和
     dom.selector = selector || ''
     return dom
   }
@@ -179,7 +188,7 @@ var Zepto = (function() {
       // If it's a html fragment, create nodes from it
       // Note: In both Chrome 21 and Firefox 15, DOM error 12
       // is thrown if the fragment doesn't begin with <
-      if (selector[0] == '<' &&  .test(selector))
+      if (selector[0] == '<' &&  fragment.test(selector))
         dom = zepto.fragment(selector, RegExp.$1, context), selector = null
       // If there's a context, create a collection on that context first, and select
       // nodes from there
@@ -377,6 +386,8 @@ var Zepto = (function() {
 
   if (window.JSON) $.parseJSON = JSON.parse
 
+  // 利用 object 的toString() 方法，来进行类型检查，
+  // class2type  数组中存放 一些基本的数据类型，便于后面进行类型判断
   // Populate the class2type map
   $.each("Boolean Number String Function Array Date RegExp Object Error".split(" "), function(i, name) {
     class2type[ "[object " + name + "]" ] = name.toLowerCase()
@@ -384,7 +395,11 @@ var Zepto = (function() {
 
   // Define methods that will be available on all
   // Zepto collections
+
+ // 定义 $.fn ，覆盖数组的原型，同时添加 数据原生方法到
+// $.fn ，保证数组方法能够使用
   $.fn = {
+
     // Because a collection acts like an array
     // copy over these useful array functions.
     forEach: emptyArray.forEach,
@@ -399,6 +414,9 @@ var Zepto = (function() {
     map: function(fn){
       return $($.map(this, function(el, i){ return fn.call(el, i, el) }))
     },
+
+    // (isFunction(selector)) return $(document).ready(selector)
+    // $ 里面包裹函数， 表示在页面加载完成后 再执行
     slice: function(){
       return $(slice.apply(this, arguments))
     },
@@ -406,23 +424,29 @@ var Zepto = (function() {
     ready: function(callback){
       // need to check if document.body exists for IE as that browser reports
       // document ready when it hasn't yet created the body element
-      if (readyRE.test(document.readyState) && document.body) callback($)
-      else document.addEventListener('DOMContentLoaded', function(){ callback($) }, false)
+      if (readyRE.test(document.readyState) && document.body) callback($)   // 如果document.body 存在，就直接调用
+      else document.addEventListener('DOMContentLoaded', function(){ callback($) }, false) // 没有的话 监听 DOMContentLoaded 事件dom 文档加载完成后再执行。
       return this
     },
+    // 获取数组中的指点项
     get: function(idx){
       return idx === undefined ? slice.call(this) : this[idx >= 0 ? idx : idx + this.length]
     },
+    // 深拷贝一分 $数组，转化成真正的数组
     toArray: function(){ return this.get() },
+
+    // 获取数组中的长度
     size: function(){
       return this.length
     },
+    // 移除 子节点
     remove: function(){
       return this.each(function(){
         if (this.parentNode != null)
           this.parentNode.removeChild(this)
       })
     },
+    // 利用数组循环遍历 节点
     each: function(callback){
       emptyArray.every.call(this, function(el, idx){
         return callback.call(el, idx, el) !== false
@@ -435,27 +459,35 @@ var Zepto = (function() {
         return zepto.matches(element, selector)
       }))
     },
+    //添加新数组 到 $ 数组中，返回经过去重的数组。
     add: function(selector,context){
       return $(uniq(this.concat($(selector,context))))
     },
+    // 在当前集合中的第一个元素  匹配选择器
     is: function(selector){
       return this.length > 0 && zepto.matches(this[0], selector)
     },
+
     not: function(selector){
       var nodes=[]
       if (isFunction(selector) && selector.call !== undefined)
+          // 如果传入的选择器是函数，整通过集合中的数组下标来进行匹配
         this.each(function(idx){
           if (!selector.call(this,idx)) nodes.push(this)
         })
       else {
+           // 如果传入的参数是 字符串，直接调用filter来进行筛选：
+           // 如果是一个可以求出长度的数组,即也是一个集合，就直接传入这个集合，进行后面的筛选
         var excludes = typeof selector == 'string' ? this.filter(selector) :
           (likeArray(selector) && isFunction(selector.item)) ? slice.call(selector) : $(selector)
+
         this.forEach(function(el){
           if (excludes.indexOf(el) < 0) nodes.push(el)
         })
       }
       return $(nodes)
     },
+
     has: function(selector){
       return this.filter(function(){
         return isObject(selector) ?
@@ -882,6 +914,8 @@ var Zepto = (function() {
   return $
 })()
 
+// 将Zepto 变量绑定到window 对象上
+// 在window 上不存在$对象的，将Zepto 赋值到 $ 属性上。
 window.Zepto = Zepto
 window.$ === undefined && (window.$ = Zepto)
 
