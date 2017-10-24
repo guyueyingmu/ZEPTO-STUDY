@@ -8,3 +8,5 @@
      dom.selector = selector || ''
      return dom
    }
+
+[zepto@1.1.6版本 源码解析加中文注释](./zepto@1.1.6.js)

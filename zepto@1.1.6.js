@@ -70,6 +70,8 @@ var Zepto = (function() {
 
   function isFunction(value) { return type(value) == "function" }
   function isWindow(obj)     { return obj != null && obj == obj.window }
+
+  // 检查是不是代表 整个文档（DOM树的根节点） 9 = DOCUMENT_NODE;
   function isDocument(obj)   { return obj != null && obj.nodeType == obj.DOCUMENT_NODE }
   function isObject(obj)     { return type(obj) == "object" }
   function isPlainObject(obj) {
@@ -101,12 +103,16 @@ var Zepto = (function() {
   }
 
   function defaultDisplay(nodeName) {
+    // 通过新创建一个元素，来获取该元素的默认 display 属性
     var element, display
+    // 这里先检查 之前有没有设置过 display 的默认属性
     if (!elementDisplay[nodeName]) {
       element = document.createElement(nodeName)
       document.body.appendChild(element)
+      // display 的默认属性值
       display = getComputedStyle(element, '').getPropertyValue("display")
       element.parentNode.removeChild(element)
+      //  设置成block ，显示元素
       display == "none" && (display = "block")
       elementDisplay[nodeName] = display
     }
@@ -255,6 +261,8 @@ var Zepto = (function() {
   // `$.zepto.qsa` is Zepto's CSS selector implementation which
   // uses `document.querySelectorAll` and optimizes for some special cases, like `#id`.
   // This method can be overriden in plugins.
+  // 实现css选择器 获取元素的引用，
+  //  分别对应 getElementsByClassName  getElementsByTagName 和 querySelectorAll 来获取节点的 引用
   zepto.qsa = function(element, selector){
     var found,
         maybeID = selector[0] == '#',
@@ -480,7 +488,7 @@ var Zepto = (function() {
            // 如果是一个可以求出长度的数组,即也是一个集合，就直接传入这个集合，进行后面的筛选
         var excludes = typeof selector == 'string' ? this.filter(selector) :
           (likeArray(selector) && isFunction(selector.item)) ? slice.call(selector) : $(selector)
-
+        //在 原数组中 匹配excludes 中不存在的数组项，放在数组nodes 中
         this.forEach(function(el){
           if (excludes.indexOf(el) < 0) nodes.push(el)
         })
@@ -495,17 +503,22 @@ var Zepto = (function() {
           $(this).find(selector).size()
       })
     },
+
+    // 利用序号，查找对应 的元素
     eq: function(idx){
       return idx === -1 ? this.slice(idx) : this.slice(idx, + idx + 1)
     },
+    // 获取顺序中的 第一个元素
     first: function(){
       var el = this[0]
       return el && !isObject(el) ? el : $(el)
     },
+    // 获取集合中的最后一个元素
     last: function(){
       var el = this[this.length - 1]
       return el && !isObject(el) ? el : $(el)
     },
+
     find: function(selector){
       var result, $this = this
       if (!selector) result = $()
@@ -516,10 +529,13 @@ var Zepto = (function() {
             return $.contains(parent, node)
           })
         })
+        // 如果 集合最后那个只有一个值，就在当前的集合中直接查找 selector 对应的的元素
       else if (this.length == 1) result = $(zepto.qsa(this[0], selector))
+       //  在比较多的情况下，使用mpa  遍历数组，返回费符合选择器的元素
       else result = this.map(function(){ return zepto.qsa(this, selector) })
       return result
     },
+
     closest: function(selector, context){
       var node = this[0], collection = false
       if (typeof selector == 'object') collection = $(selector)
@@ -527,46 +543,67 @@ var Zepto = (function() {
         node = node !== context && !isDocument(node) && node.parentNode
       return $(node)
     },
+    //
     parents: function(selector){
       var ancestors = [], nodes = this
       while (nodes.length > 0)
         nodes = $.map(nodes, function(node){
+            // 保存集合中每个元素的所有的父元素，并且不会重复保存
+           // 循环向上查找，直到文档树的根节点
           if ((node = node.parentNode) && !isDocument(node) && ancestors.indexOf(node) < 0) {
             ancestors.push(node)
             return node
           }
         })
+      // 如果相应的传入了css 选择器参数，则进行过滤所有的 父节点
       return filtered(ancestors, selector)
     },
+
+
     parent: function(selector){
+      // 利用pluck 来获取当前集合中的父节点属性值，经过数组去重
+      // 如果传入参数有css 选择器，则过滤后再返回
       return filtered(uniq(this.pluck('parentNode')), selector)
     },
+*************************
     children: function(selector){
       return filtered(this.map(function(){ return children(this) }), selector)
     },
+*************************
     contents: function() {
+        // 返回 当前集合中的节点的子元素
       return this.map(function() { return slice.call(this.childNodes) })
     },
+
     siblings: function(selector){
+
       return filtered(this.map(function(i, el){
+   //  当前集合中 元素的 父元素的所有非自己的子元素，就为当前元素的兄弟节点
         return filter.call(children(el.parentNode), function(child){ return child!==el })
       }), selector)
     },
+
     empty: function(){
+       // 集合中的元素 设置 innerHTML = ‘’ , 即为清空
       return this.each(function(){ this.innerHTML = '' })
     },
     // `pluck` is borrowed from Prototype.js
     pluck: function(property){
+         // 遍历返回当前集合元素中的对应属性
       return $.map(this, function(el){ return el[property] })
     },
     show: function(){
+
       return this.each(function(){
         this.style.display == "none" && (this.style.display = '')
         if (getComputedStyle(this, '').getPropertyValue("display") == "none")
           this.style.display = defaultDisplay(this.nodeName)
       })
     },
+      // before   => insertBefore  定义了简写的方法
+      //
     replaceWith: function(newContent){
+      // 当前元素的前面插入新元素后，删除当前元素，则实现了替换操作
       return this.before(newContent).remove()
     },
     wrap: function(structure){
