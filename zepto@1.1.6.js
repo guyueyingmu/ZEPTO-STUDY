@@ -295,6 +295,7 @@ var Zepto = (function() {
     }
 
   function funcArg(context, arg, idx, payload) {
+    // 判断 arg 是不是 function 类型的， 是，则直接调用该函数，不是，则直接返回参数
     return isFunction(arg) ? arg.call(context, idx, payload) : arg
   }
 
@@ -565,11 +566,11 @@ var Zepto = (function() {
       // 如果传入参数有css 选择器，则过滤后再返回
       return filtered(uniq(this.pluck('parentNode')), selector)
     },
-*************************
+// *************************
     children: function(selector){
       return filtered(this.map(function(){ return children(this) }), selector)
     },
-*************************
+// *************************
     contents: function() {
         // 返回 当前集合中的节点的子元素
       return this.map(function() { return slice.call(this.childNodes) })
@@ -606,6 +607,7 @@ var Zepto = (function() {
       // 当前元素的前面插入新元素后，删除当前元素，则实现了替换操作
       return this.before(newContent).remove()
     },
+  // *****************************************************
     wrap: function(structure){
       var func = isFunction(structure)
       if (this[0] && !func)
@@ -637,33 +639,61 @@ var Zepto = (function() {
         contents.length ? contents.wrapAll(dom) : self.append(dom)
       })
     },
+    // ********************************************************
     unwrap: function(){
       this.parent().each(function(){
         $(this).replaceWith($(this).children())
       })
       return this
     },
+
     clone: function(){
+      // 利用cloneNode深度克隆当前集合 包括集合中的子节点
       return this.map(function(){ return this.cloneNode(true) })
     },
+
     hide: function(){
+       // 隐藏当前集合中的元素
       return this.css("display", "none")
     },
     toggle: function(setting){
       return this.each(function(){
         var el = $(this)
+         // 如果传入的参数中指定了setting，表示显示 或者 隐藏， 则调用对应的 show() 和 hide();
+         // 如果没有传入然后参数，则根据当前 元素中 display 的 属性 来 相反的进行操作。
         ;(setting === undefined ? el.css("display") == "none" : setting) ? el.show() : el.hide()
       })
     },
+     // 直接使用原生的 previousElementSibling 属性 来 获取 集合中的前驱节点，同时如果有选择器传入的话，
+     // 则 调用filter 过滤后在再 返回结果
     prev: function(selector){ return $(this.pluck('previousElementSibling')).filter(selector || '*') },
+    //直接使用原生的 nextElementSibling 属性 来 获取
     next: function(selector){ return $(this.pluck('nextElementSibling')).filter(selector || '*') },
+
     html: function(html){
+       // in 操作符有两种用法
+        /*
+            1. for...in 声明 用于对数组或者对象的属性进行迭代/ 循环操作
+            2.判断对象是否为数组/ 对象的元素/ 属性
+              (变量 in 对象)
+                 当　“对象”　为数组时，＂变量＂指的是数组的“索引”
+                 当 “对象” 为对象时， “变量” 指的是对象的 “属性”
+           */
+        // 在这里 in  用来判断 是否有传入参数，是否有传入填充值
       return 0 in arguments ?
         this.each(function(idx){
           var originHtml = this.innerHTML
-          $(this).empty().append( funcArg(this, html, idx, originHtml) )
+          /*function funcArg(context, arg, idx, payload) {
+             return isFunction(arg) ? arg.call(context, idx, payload) : arg
+           }  */
+           //
+
+           // 如果参数不是函数，直接append到对应的元素中，
+          //  如果参数 是函数， 再传入当前节点的索引 和 内容最为参数，供用户调用
+          // 先清空，再填充对应的数值
+           $(this).empty().append( funcArg(this, html, idx, originHtml) )
         }) :
-        (0 in this ? this[0].innerHTML : null)
+        (0 in this ? this[0].innerHTML : null)  // 如果没有传入任何参数，则返回该集合中第一个元素的innerHTML 的内容
     },
     text: function(text){
       return 0 in arguments ?
