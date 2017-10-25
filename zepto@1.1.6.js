@@ -699,23 +699,31 @@ var Zepto = (function() {
       return 0 in arguments ?
         this.each(function(idx){
           var newText = funcArg(this, text, idx, this.textContent)
+      //如果您设置了 textContent 属性，会删除所有子节点，并被替换为包含指定字符串的一个单独的文本节
+        // 同上 html 的方法，通过textContent 来设置 nexttext 同时返回 新的的text
           this.textContent = newText == null ? '' : ''+newText
         }) :
-        (0 in this ? this[0].textContent : null)
+        (0 in this ? this[0].textContent : null)  // 如果没有传入任何参数，则返回集合中第一个元素的 textContent;
     },
     attr: function(name, value){
       var result
       return (typeof name == 'string' && !(1 in arguments)) ?
-        (!this.length || this[0].nodeType !== 1 ? undefined :
-          (!(result = this[0].getAttribute(name)) && name in this[0]) ? this[0][name] : result
+          // 传入的参数只有一个，则当做获取元素的属性，
+        (!this.length || this[0].nodeType !== 1 ? undefined :  // 传入的参数只有一个，并且当前集合的长度为0 ,或者集合中不为元素节点
+          (!(result = this[0].getAttribute(name)) && name in this[0]) ? this[0][name] : result  //利用getAttribute 来获取属性值，如果要获取集合中第一个元素的自有属性，则直接通过this[0][name] 来获取对应的 的属性
         ) :
+        // 后面如果是传入了两个参数，则表示通过
         this.each(function(idx){
           if (this.nodeType !== 1) return
+         //  如果通过对象的形式来设置 属性，可以遍历name 对象中的 key ，value 值来设置对应的 属性
           if (isObject(name)) for (key in name) setAttribute(this, key, name[key])
+          // 如果name 不是对象，则利用name 和 value 两个参数来设置 key value 值；
           else setAttribute(this, name, funcArg(this, value, idx, this.getAttribute(name)))
         })
     },
     removeAttr: function(name){
+        // 可同时移除多个利用空格分隔的属性
+        // 通过forEach 的遍历方法， 来 设置 setAttribute
       return this.each(function(){ this.nodeType === 1 && name.split(' ').forEach(function(attribute){
         setAttribute(this, attribute)
       }, this)})
