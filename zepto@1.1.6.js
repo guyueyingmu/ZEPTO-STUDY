@@ -708,7 +708,7 @@ var Zepto = (function() {
     attr: function(name, value){
       var result
       return (typeof name == 'string' && !(1 in arguments)) ?
-          // 传入的参数只有一个，则当做获取元素的属性，
+          // 传入的参数只有一个，则当做获取DOM元素的属性，
         (!this.length || this[0].nodeType !== 1 ? undefined :  // 传入的参数只有一个，并且当前集合的长度为0 ,或者集合中不为元素节点
           (!(result = this[0].getAttribute(name)) && name in this[0]) ? this[0][name] : result  //利用getAttribute 来获取属性值，如果要获取集合中第一个元素的自有属性，则直接通过this[0][name] 来获取对应的 的属性
         ) :
@@ -731,12 +731,15 @@ var Zepto = (function() {
     prop: function(name, value){
       name = propMap[name] || name
       return (1 in arguments) ?
+        // 如果传入有两个参数，则表示设置元素的属性，
         this.each(function(idx){
           this[name] = funcArg(this, value, idx, this[name])
         }) :
+        // 只传入一个参数的时候，直接获取该元素对象上对应的属性值,与attr 不同的是 没有使用getAttribute获取
         (this[0] && this[0][name])
     },
     data: function(name, value){
+       // 设置集合中dom 节点的，     data 自定义属性， capitalRE如果匹配到大写字母，则前面加上 - 
       var attrName = 'data-' + name.replace(capitalRE, '-$1').toLowerCase()
 
       var data = (1 in arguments) ?
@@ -979,6 +982,24 @@ var Zepto = (function() {
     }
   })
 
+   // 对这一段做出解释
+   /*
+  类比理解：
+    var F = function(){};
+    var f = new F();
+    f._proto_  === F.prototype    // true;
+
+      $最终返回的其实都是zepto.Z 的实例，从上面的 代码可以看出，为了保持_proto_ 和 prototype 一致就会出现下面的费复杂
+ 深层次理解：
+      function fn(){}
+      var pro = new Object();
+
+      fn.prototype  = pro;
+
+      var obj = {};
+      obj._proto_ = pro;
+      console.log(obj instanceof fn)   // true;
+    */
   zepto.Z.prototype = $.fn
 
   // Export internal API functions in the `$.zepto` namespace
