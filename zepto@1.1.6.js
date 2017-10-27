@@ -1,5 +1,6 @@
 /* Zepto v1.1.6 - zepto event ajax form ie - zeptojs.com/license */
 
+
 var Zepto = (function() {
   var undefined, key, $, classList, emptyArray = [], slice = emptyArray.slice, filter = emptyArray.filter,
     document = window.document,
@@ -739,22 +740,26 @@ var Zepto = (function() {
         (this[0] && this[0][name])
     },
     data: function(name, value){
-       // 设置集合中dom 节点的，     data 自定义属性， capitalRE如果匹配到大写字母，则前面加上 - 
+       // 设置集合中dom 节点的，     data 自定义属性， capitalRE如果匹配到大写字母，则每个大写字母前面加上 -
       var attrName = 'data-' + name.replace(capitalRE, '-$1').toLowerCase()
 
-      var data = (1 in arguments) ?
+      var data = (1 in arguments) ?    // 分别对设置  和 获取 attr 做判断
         this.attr(attrName, value) :
         this.attr(attrName)
-
+        // 通过 deserializeValue 的正则替换后，就可以相应的等到自定义的属性值
       return data !== null ? deserializeValue(data) : undefined
     },
     val: function(value){
       return 0 in arguments ?
         this.each(function(idx){
+            // 设置input类的value 值， 也可以通过函数调用 利用目前的value 进行设置
           this.value = funcArg(this, value, idx, this.value)
         }) :
+        // 获取当前元素 的 value 值，
         (this[0] && (this[0].multiple ?
+           // 如果是 select 多选框，则选择option 元素中被选中的元素的value 值，通过pluck 来获取
            $(this[0]).find('option').filter(function(){ return this.selected }).pluck('value') :
+          //如果是一般的input 元素 ，就可以直接获取value 属性值
            this[0].value)
         )
     },
