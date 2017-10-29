@@ -100,6 +100,7 @@ var Zepto = (function() {
   }
 
   function maybeAddPx(name, value) {
+      //存在cssNumber 数组中的属性都是不需要在 属性值中 加上 "px"
     return (typeof value == "number" && !cssNumber[dasherize(name)]) ? value + "px" : value
   }
 
@@ -764,35 +765,46 @@ var Zepto = (function() {
         )
     },
     offset: function(coordinates){
+       // 利用元素的relative属性，top 和 left ，
+       // 设置的 像素距离都是相对最外层(父元素的外层元素)的元素来设置的
       if (coordinates) return this.each(function(index){
         var $this = $(this),
             coords = funcArg(this, coordinates, index, $this.offset()),
             parentOffset = $this.offsetParent().offset(),
             props = {
+
               top:  coords.top  - parentOffset.top,
+              // 元素的左外边框至包含元素的左内边框之间的像素距离
               left: coords.left - parentOffset.left
             }
 
         if ($this.css('position') == 'static') props['position'] = 'relative'
+        // 最后直接利用 封装好的 css 来设置对应的属性
         $this.css(props)
       })
+      // 如果 当前集合中的元素 个数是0 则直接返回null
       if (!this.length) return null
       var obj = this[0].getBoundingClientRect()
+      //pageXOffset 和 pageYOffset 属性返回文档在窗口左上角水平和垂直方向滚动的像素。
+      // pageXOffset 和 pageYOffset 属性相等于 scrollX 和 scrollY 属性。 最后计算得到的就是 距离文档边缘的 距离
       return {
+        // 这里返回的就是相对于整个文档的坐标
         left: obj.left + window.pageXOffset,
         top: obj.top + window.pageYOffset,
         width: Math.round(obj.width),
         height: Math.round(obj.height)
       }
     },
+
     css: function(property, value){
       if (arguments.length < 2) {
         var computedStyle, element = this[0]
         if(!element) return
         computedStyle = getComputedStyle(element, '')
         if (typeof property == 'string')
+           // 获取css，通过它的style 特性获取，如果没有的话，，就可以通过样式表规则应用的，获取这个元素计算后的样式
           return element.style[camelize(property)] || computedStyle.getPropertyValue(property)
-        else if (isArray(property)) {
+        else if (isArray(property)) {   // 如果想要获取的一系列的样式属性值，可以通过each 来遍历获取
           var props = {}
           $.each(property, function(_, prop){
             props[prop] = (element.style[camelize(prop)] || computedStyle.getPropertyValue(prop))
@@ -808,19 +820,30 @@ var Zepto = (function() {
         else
           css = dasherize(property) + ":" + maybeAddPx(property, value)
       } else {
+        // 如果property是一个对象，则遍历对象中的属性，
         for (key in property)
           if (!property[key] && property[key] !== 0)
+             // 如果这里属性值对应的是空格且不为0，则表示删除这个属性
+             // removeProperty这个方法，意味着将会为该属性应用默认的样式(从其他样式表经层叠而来)
             this.each(function(){ this.style.removeProperty(dasherize(key)) })
           else
             css += dasherize(key) + ':' + maybeAddPx(key, property[key]) + ';'
       }
-
+     // cssText:
+     // 通过cssText 属性 可以访问style特性中的css代码，
+    //   读模式下，cssText返回浏览器对style特性中CSS 代码的内部表示，
+    //   写入模式下，赋给cssText的值会重写整个style特性的值，也就意味着 ，以前通过style 特性指定的样式信息都将丢失
       return this.each(function(){ this.style.cssText += ';' + css })
     },
+    //通过 数组的indexOf 来获取 集合中指定元素的 序号
     index: function(element){
       return element ? this.indexOf($(element)[0]) : this.parent().children().indexOf(this[0])
     },
+    // 通过数组的some方法
     hasClass: function(name){
+    // arr.some(callback[,thisArg])
+    // callback 用来测试每个元素的函数，
+    // thisArg 执行callback 时使用的this值。--> callRE(name)  正则表达式
       if (!name) return false
       return emptyArray.some.call(this, function(el){
         return this.test(className(el))
@@ -831,10 +854,12 @@ var Zepto = (function() {
       return this.each(function(idx){
         if (!('className' in this)) return
         classList = []
+        // 获取集合中元素已经存在的类，
         var cls = className(this), newName = funcArg(this, name, idx, cls)
         newName.split(/\s+/g).forEach(function(klass){
           if (!$(this).hasClass(klass)) classList.push(klass)
         }, this)
+        // 同样通过 className方法，来设置所有的class  类，
         classList.length && className(this, cls + (cls ? " " : "") + classList.join(" "))
       })
     },
@@ -844,8 +869,10 @@ var Zepto = (function() {
         if (name === undefined) return className(this, '')
         classList = className(this)
         funcArg(this, name, idx, classList).split(/\s+/g).forEach(function(klass){
+          // 将对应的classname 替换成“ ”，达到移除对应class的目的
           classList = classList.replace(classRE(klass), " ")
         })
+        // 同样 将除去对应classname的 classlist 字符串 赋值到对应的元素。
         className(this, classList.trim())
       })
     },
