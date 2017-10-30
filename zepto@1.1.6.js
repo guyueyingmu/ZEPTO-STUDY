@@ -881,15 +881,19 @@ var Zepto = (function() {
       return this.each(function(idx){
         var $this = $(this), names = funcArg(this, name, idx, className(this))
         names.split(/\s+/g).forEach(function(klass){
-          (when === undefined ? !$this.hasClass(klass) : when) ?
+          (when === undefined ? !$this.hasClass(klass) : when) ?  // when指定 是否添加或者删除对应的 class 类，
+             // 没有特意指定，则调用 hasClass 来判断，
             $this.addClass(klass) : $this.removeClass(klass)
         })
       })
     },
     scrollTop: function(value){
       if (!this.length) return
+      // in 操作符用来判断某个属性属于某个对象，可以是对象的直接属性，也可以是通过prototype 继承的属性。
       var hasScrollTop = 'scrollTop' in this[0]
+       //  如果没有scrollTop 属性就返回 pageYOffset 属性值。
       if (value === undefined) return hasScrollTop ? this[0].scrollTop : this[0].pageYOffset
+    // 通过scrollTop  设置值，
       return this.each(hasScrollTop ?
         function(){ this.scrollTop = value } :
         function(){ this.scrollTo(this.scrollX, value) })
