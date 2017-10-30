@@ -937,7 +937,7 @@ var Zepto = (function() {
     offsetParent: function() {
       return this.map(function(){
         var parent = this.offsetParent || document.body
-        while (parent && !rootNodeRE.test(parent.nodeName) && $(parent).css("position") == "static")   // 不断向上遍历，获取最外的offsetParent。 
+        while (parent && !rootNodeRE.test(parent.nodeName) && $(parent).css("position") == "static")   // 不断向上遍历，获取最外的offsetParent。
           parent = parent.offsetParent
         return parent
       })
