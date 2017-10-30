@@ -9,7 +9,7 @@ var Zepto = (function() {
     fragmentRE = /^\s*<(\w+|!)[^>]*>/,
     singleTagRE = /^<(\w+)\s*\/?>(?:<\/\1>|)$/,
     tagExpanderRE = /<(?!area|br|col|embed|hr|img|input|link|meta|param)(([\w:]+)[^>]*)\/>/ig,
-    rootNodeRE = /^(?:body|html)$/i,
+    rootNodeRE = /^(?:body|html)$/i,   // (?:)非捕获型括号，只使用括号的原始方法，   i 匹配过程中忽略英文的 大小写   匹配节点的根目录
     capitalRE = /([A-Z])/g,
 
     // special attributes that should be get/set via method calls
@@ -893,14 +893,14 @@ var Zepto = (function() {
       var hasScrollTop = 'scrollTop' in this[0]
        //  如果没有scrollTop 属性就返回 pageYOffset 属性值。
       if (value === undefined) return hasScrollTop ? this[0].scrollTop : this[0].pageYOffset
-    // 通过scrollTop  设置值，
+
       return this.each(hasScrollTop ?
-        function(){ this.scrollTop = value } :
-        function(){ this.scrollTo(this.scrollX, value) })
+        function(){ this.scrollTop = value } :      // 通过scrollTop  设置值，
+        function(){ this.scrollTo(this.scrollX, value) })   // scrollTo  滚动到文档中的某个坐标。
     },
     scrollLeft: function(value){
       if (!this.length) return
-      var hasScrollLeft = 'scrollLeft' in this[0]
+      var hasScrollLeft = 'scrollLeft' in this[0]   // 判断该对象中是否有scrollLeft 属性， 原理同上面的scrollTop;
       if (value === undefined) return hasScrollLeft ? this[0].scrollLeft : this[0].pageXOffset
       return this.each(hasScrollLeft ?
         function(){ this.scrollLeft = value } :
@@ -914,12 +914,14 @@ var Zepto = (function() {
         offsetParent = this.offsetParent(),
         // Get correct offsets
         offset       = this.offset(),
+        // 是文档的根节点，就返回{left:0,Right:0}
+       // 否则就返回 包含元素的offset()坐标。
         parentOffset = rootNodeRE.test(offsetParent[0].nodeName) ? { top: 0, left: 0 } : offsetParent.offset()
 
       // Subtract element margins
       // note: when an element has margin: auto the offsetLeft and marginLeft
       // are the same in Safari causing offset.left to incorrectly be 0
-      offset.top  -= parseFloat( $(elem).css('margin-top') ) || 0
+      offset.top  -= parseFloat( $(elem).css('margin-top') ) || 0   // 元素的左外边框至包含元素的左内边框 -- offsetLeft; 所以就要减去边距
       offset.left -= parseFloat( $(elem).css('margin-left') ) || 0
 
       // Add offsetParent borders
@@ -929,13 +931,13 @@ var Zepto = (function() {
       // Subtract the two offsets
       return {
         top:  offset.top  - parentOffset.top,
-        left: offset.left - parentOffset.left
+        left: offset.left - parentOffset.left    // 获取元素的 定位距离，
       }
     },
     offsetParent: function() {
       return this.map(function(){
         var parent = this.offsetParent || document.body
-        while (parent && !rootNodeRE.test(parent.nodeName) && $(parent).css("position") == "static")
+        while (parent && !rootNodeRE.test(parent.nodeName) && $(parent).css("position") == "static")   // 不断向上遍历，获取最外的offsetParent。 
           parent = parent.offsetParent
         return parent
       })
