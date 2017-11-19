@@ -955,11 +955,11 @@ var Zepto = (function() {
     $.fn[dimension] = function(value){
       var offset, el = this[0]
       if (value === undefined) return isWindow(el) ? el['inner' + dimensionProperty] :
-        isDocument(el) ? el.documentElement['scroll' + dimensionProperty] :
-        (offset = this.offset()) && offset[dimension]
+        isDocument(el) ? el.documentElement['scroll' + dimensionProperty] :   // 如果是文档的根节点，使用 scrolllWidth;
+        (offset = this.offset()) && offset[dimension]                      // 如果是一般的文档节点， 通过offset()  集合中的width ，height 属性来等到结果
       else return this.each(function(idx){
         el = $(this)
-        el.css(dimension, funcArg(this, value, idx, el[dimension]()))
+        el.css(dimension, funcArg(this, value, idx, el[dimension]()))    // 可以设置值，直接 通过css 方法设置 宽 高 属性
       })
     }
   })
