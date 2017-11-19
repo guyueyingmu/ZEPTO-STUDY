@@ -543,7 +543,7 @@ var Zepto = (function() {
       var node = this[0], collection = false
       if (typeof selector == 'object') collection = $(selector)
       while (node && !(collection ? collection.indexOf(node) >= 0 : zepto.matches(node, selector)))
-        node = node !== context && !isDocument(node) && node.parentNode
+        node = node !== context && !isDocument(node) && node.parentNode   // 向上遍历找到 符合条件的第一个元素，返回。
       return $(node)
     },
     //
@@ -1053,6 +1053,9 @@ var Zepto = (function() {
 window.Zepto = Zepto
 window.$ === undefined && (window.$ = Zepto)
 
+
+
+// 下面的方法用来为对应的 dom 添加事件绑定
 ;(function($){
   var _zid = 1, undefined,
       slice = Array.prototype.slice,
@@ -1100,8 +1103,8 @@ window.$ === undefined && (window.$ = Zepto)
 
   function add(element, events, fn, data, selector, delegator, capture){
     var id = zid(element), set = (handlers[id] || (handlers[id] = []))
-    events.split(/\s/).forEach(function(event){
-      if (event == 'ready') return $(document).ready(fn)
+    events.split(/\s/).forEach(function(event){                      // 通过空格分割的多个事件，同时注册到对应的dom 上，
+      if (event == 'ready') return $(document).ready(fn)             // 也可以监听ready 事件。
       var handler   = parse(event)
       handler.fn    = fn
       handler.sel   = selector
@@ -1111,19 +1114,19 @@ window.$ === undefined && (window.$ = Zepto)
         if (!related || (related !== this && !$.contains(this, related)))
           return handler.fn.apply(this, arguments)
       }
-      handler.del   = delegator
+      handler.del   = delegator                //  通过事件代理的方式绑定，则不会阻止事件的冒泡，方便事件向上冒泡。
       var callback  = delegator || fn
       handler.proxy = function(e){
         e = compatible(e)
-        if (e.isImmediatePropagationStopped()) return
-        e.data = data
+        if (e.isImmediatePropagationStopped()) return   // 函数的返回值为Boolean类型，以指示是否已经调用过,true 表示已经调用stopImmediatePropagation了
+        e.data = data                  // 将传入的data 保存 到 ，事件对象的 data 属性中，
         var result = callback.apply(element, e._args == undefined ? [e] : [e].concat(e._args))
-        if (result === false) e.preventDefault(), e.stopPropagation()
+        if (result === false) e.preventDefault(), e.stopPropagation()    // 根据上面的callback 判断为false ,则阻止 事件触发的默认行为和事件的冒泡行为。
         return result
       }
       handler.i = set.length
       set.push(handler)
-      if ('addEventListener' in element)
+      if ('addEventListener' in element)                    // 最后通过addEventListener 方法 来绑定事件。
         element.addEventListener(realEvent(handler.e), handler.proxy, eventCapture(handler, capture))
     })
   }
@@ -1131,6 +1134,7 @@ window.$ === undefined && (window.$ = Zepto)
     var id = zid(element)
     ;(events || '').split(/\s/).forEach(function(event){
       findHandlers(element, event, fn, selector).forEach(function(handler){
+
         delete handlers[id][handler.i]
       if ('removeEventListener' in element)
         element.removeEventListener(realEvent(handler.e), handler.proxy, eventCapture(handler, capture))
@@ -1225,6 +1229,7 @@ window.$ === undefined && (window.$ = Zepto)
   $.fn.on = function(event, selector, data, callback, one){
     var autoRemove, delegator, $this = this
     if (event && !isString(event)) {
+    // 如果这里的event 参数 不是字符串， {type:handler,type2:handler}, 同时为该dom 绑定多个事件对象。
       $.each(event, function(type, fn){
         $this.on(type, selector, data, fn, one)
       })
@@ -1233,19 +1238,19 @@ window.$ === undefined && (window.$ = Zepto)
 
     if (!isString(selector) && !isFunction(callback) && callback !== false)
       callback = data, data = selector, selector = undefined
-    if (isFunction(data) || data === false)
-      callback = data, data = undefined
+    if (isFunction(data) || data === false)   // $(document).on("click",'a',false)   ==>$(document).on("click",'a',function(){return false;})
+      callback = data, data = undefined       // isFunction(data) 为真，表示没有传入data 或者 也没有传入 selector ,只传入了callback.,
 
-    if (callback === false) callback = returnFalse
+    if (callback === false) callback = returnFalse   // 将 callback 传入  function(){return false}  阻止事件的默认行为。
 
     return $this.each(function(_, element){
-      if (one) autoRemove = function(e){
-        remove(element, e.type, callback)
-        return callback.apply(this, arguments)
+      if (one) autoRemove = function(e){         //  在使用 one 方法 只让事件至多触发一次的情况下，就卸载绑定的事件。
+        remove(element, e.type, callback)       //   再调用remove 事件，解除绑定。
+        return callback.apply(this, arguments)    // autoRemove  拿到了callback 的事件句柄
       }
 
       if (selector) delegator = function(e){
-        var evt, match = $(e.target).closest(selector, element).get(0)
+        var evt, match = $(e.target).closest(selector, element).get(0);  // 在委托事件存在的时候，获取点击事件的符合selector的父元素
         if (match && match !== element) {
           evt = $.extend(createProxy(e), {currentTarget: match, liveFired: element})
           return (autoRemove || callback).apply(match, [evt].concat(slice.call(arguments, 1)))
@@ -1281,7 +1286,7 @@ window.$ === undefined && (window.$ = Zepto)
       // handle focus(), blur() by calling them directly
       if (event.type in focus && typeof this[event.type] == "function") this[event.type]()
       // items in the collection might not be DOM elements
-      else if ('dispatchEvent' in this) this.dispatchEvent(event)
+      else if ('dispatchEvent' in this) this.dispatchEvent(event)     // 主动使用事件分发方法，来主动触发事件
       else $(this).triggerHandler(event, args)
     })
   }
@@ -1303,12 +1308,13 @@ window.$ === undefined && (window.$ = Zepto)
   }
 
   // shortcut methods for `.bind(event, fn)` for each event type
+  // 如果想实现快捷方法来绑定事件，则使用下面这种方法
   ;('focusin focusout focus blur load resize scroll unload click dblclick '+
   'mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave '+
   'change select keydown keypress keyup error').split(' ').forEach(function(event) {
     $.fn[event] = function(callback) {
-      return (0 in arguments) ?
-        this.bind(event, callback) :
+      return (0 in arguments) ?      // 如果有回调函数的情况下，在事件绑定中添加callback 回调。
+        this.bind(event, callback) :   // 使用 bind 转换
         this.trigger(event)
     }
   })
