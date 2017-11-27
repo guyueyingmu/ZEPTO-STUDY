@@ -1065,10 +1065,22 @@ window.$ === undefined && (window.$ = Zepto)
       specialEvents={},
       focusinSupported = 'onfocusin' in window,
       focus = { focus: 'focusin', blur: 'focusout' },
+      // focusin 和 focus 一样, 不同点是： focus--不支持冒泡  , focusin 支持冒泡
+      //  blur 和 focusout 功能一样， 不同点是： blur 不支持冒泡， focusout 支持冒泡，
       hover = { mouseenter: 'mouseover', mouseleave: 'mouseout' }
+      // mouseover: 不论鼠标指针穿过被选原生  或 其子元素， 都会触发 mouseover事件
+      // mouseout :  离开被选元素          或者其子元素，都会触发mouseout 事件
+      // mouseleave:  只有在鼠标指针离开被选元素时，才会触发，
+      // mouseenter: 只有在鼠标指针穿过被选元素时，才会触发mouseenter 事件
 
   specialEvents.click = specialEvents.mousedown = specialEvents.mouseup = specialEvents.mousemove = 'MouseEvents'
 
+  /**
+   *  对每个即将绑定事件的元素申请 一格对应的 id,
+   *  @method zid
+   *  @param  {Object} element 节点元素对应的对象
+   *  @return {null}         没有任何返回值
+   */
   function zid(element) {
     return element._zid || (element._zid = _zid++)
   }
@@ -1083,6 +1095,13 @@ window.$ === undefined && (window.$ = Zepto)
         && (!selector || handler.sel == selector)
     })
   }
+
+  /**
+   *  将传入的字符串事件名，转换成 对象
+   *  @method parse
+   *  @param  String event [description]
+   *  @return {null}       [description]
+   */
   function parse(event) {
     var parts = ('' + event).split('.')
     return {e: parts[0], ns: parts.slice(1).sort().join(' ')}
@@ -1091,28 +1110,45 @@ window.$ === undefined && (window.$ = Zepto)
     return new RegExp('(?:^| )' + ns.replace(' ', ' .* ?') + '(?: |$)')
   }
 
+  /**
+   *  判断是否在捕获阶段执行该函数，
+   *  @method eventCapture
+   *  @param  {Object}     handler        [description]
+   *  @param  {String}    captureSetting [ 是否允在捕获时执行 ]
+   *  @return {[type]}                    [description]
+   */
   function eventCapture(handler, captureSetting) {
     return handler.del &&
-      (!focusinSupported && (handler.e in focus)) ||
+      (!focusinSupported && (handler.e in focus)) ||   // onfocusin 支持冒泡，可以设置为true,
       !!captureSetting
   }
 
   function realEvent(type) {
+    // 这里将对应事件进行统一的管理，
+    // mouseover 替代 mouseenter;
+    // mouseout 替代  mouseleave
+    // focusin 替代 focus
+    // focusout 替代 blur
+    // 对于 大部分的事件，都要经过这里进行替换
     return hover[type] || (focusinSupported && focus[type]) || type
   }
 
   function add(element, events, fn, data, selector, delegator, capture){
-    var id = zid(element), set = (handlers[id] || (handlers[id] = []))
+    var id = zid(element), set = (handlers[id] || (handlers[id] = []))    // 在全局的handlers 对象中，通过zid 进行标记，为每个元素开辟一个事件句柄的数组，分别在数组中存入不同的绑定事件的句柄。
     events.split(/\s/).forEach(function(event){                      // 通过空格分割的多个事件，同时注册到对应的dom 上，
       if (event == 'ready') return $(document).ready(fn)             // 也可以监听ready 事件。
-      var handler   = parse(event)
-      handler.fn    = fn
-      handler.sel   = selector
-      // emulate mouseenter, mouseleave
+      var handler   = parse(event)    // handler 存放整个触发事件相关信息
+      handler.fn    = fn             // fn --  事件触发的回调函数
+      handler.sel   = selector       // sel -- 事件选择器，在事件代理中有作用
+      // emulate mouseenter, mouseleave,进入和离开的时候都只触发一次，不会在子元素相关中触发
       if (handler.e in hover) fn = function(e){
+          // relatedTarget 事件属性返回与事件的目标节点相关的节点。
+          // 对于 mouseover 事件来说，该属性是鼠标指针移到目标节点上时所离开的那个节点。
+          // 对于 mouseout 事件来说，该属性是离开目标时，鼠标指针进入的节点。
         var related = e.relatedTarget
         if (!related || (related !== this && !$.contains(this, related)))
-          return handler.fn.apply(this, arguments)
+           // 只有在不是进入或者离开目标元素的时候，才会触发。
+           return handler.fn.apply(this, arguments)
       }
       handler.del   = delegator                //  通过事件代理的方式绑定，则不会阻止事件的冒泡，方便事件向上冒泡。
       var callback  = delegator || fn
@@ -1128,6 +1164,10 @@ window.$ === undefined && (window.$ = Zepto)
       set.push(handler)
       if ('addEventListener' in element)                    // 最后通过addEventListener 方法 来绑定事件。
         element.addEventListener(realEvent(handler.e), handler.proxy, eventCapture(handler, capture))
+        //addEventListener 对应的三个参数分别是：
+          //             string: 事件名称
+          //             function:要触发的事件处理函数
+          //             boolean: 指定事件处理函数的的阶段，  options:    true -- 事件句柄在捕获阶段执行  ； false -- 事件句柄在冒泡阶段执行
     })
   }
   function remove(element, events, fn, selector, capture){
@@ -1161,13 +1201,15 @@ window.$ === undefined && (window.$ = Zepto)
       throw new TypeError("expected function")
     }
   }
-
+   // bind 方法，在内部也会转换成 on 方法。
   $.fn.bind = function(event, data, callback){
     return this.on(event, data, callback)
   }
+  // unbind 方法，在zepto 内部转换成off 方法。
   $.fn.unbind = function(event, callback){
     return this.off(event, callback)
   }
+  // 绑定一次就解除绑定，调用on方法，最后传入 1 
   $.fn.one = function(event, selector, data, callback){
     return this.on(event, selector, data, callback, 1)
   }
