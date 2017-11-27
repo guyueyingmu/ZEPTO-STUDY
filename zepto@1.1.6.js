@@ -377,13 +377,15 @@ var Zepto = (function() {
       }
     return flatten(values)
   }
-
+   // 遍历方法 each
   $.each = function(elements, callback){
     var i, key
+    // 如果是 类似数组的集合 ，则使用for 循环遍历
     if (likeArray(elements)) {
       for (i = 0; i < elements.length; i++)
         if (callback.call(elements[i], i, elements[i]) === false) return elements
     } else {
+      // 其他的对象，则使用for in 遍历，
       for (key in elements)
         if (callback.call(elements[key], key, elements[key]) === false) return elements
     }
@@ -1073,7 +1075,9 @@ window.$ === undefined && (window.$ = Zepto)
       // mouseleave:  只有在鼠标指针离开被选元素时，才会触发，
       // mouseenter: 只有在鼠标指针穿过被选元素时，才会触发mouseenter 事件
 
+// 要创建的事件类型 这里包括了所有的鼠标事件，都归类在  "MouseEvents" 事件中
   specialEvents.click = specialEvents.mousedown = specialEvents.mouseup = specialEvents.mousemove = 'MouseEvents'
+
 
   /**
    *  对每个即将绑定事件的元素申请 一格对应的 id,
@@ -1231,12 +1235,15 @@ window.$ === undefined && (window.$ = Zepto)
         var sourceMethod = source[name]
         event[name] = function(){
           this[predicate] = returnTrue
+          // 绑定event 事件对象中的 原始方法
           return sourceMethod && sourceMethod.apply(source, arguments)
         }
+        // 默认情况下 事件对象没有调用 event.preventDefault()方法，如果preventDefault(),已经被调用了，就会返回true.
+        // 这也是jQuery 中自定义的几个事件对象的属性
         event[predicate] = returnFalse
       })
-
-      if (source.defaultPrevented !== undefined ? source.defaultPrevented :
+       // event.defaultPrevented （DOM3级事件中新增） true,表示已经调用了 preventDefault() 。
+       if (source.defaultPrevented !== undefined ? source.defaultPrevented :
           'returnValue' in source ? source.returnValue === false :
           source.getPreventDefault && source.getPreventDefault())
         event.isDefaultPrevented = returnTrue
@@ -1251,7 +1258,7 @@ window.$ === undefined && (window.$ = Zepto)
 
     return compatible(proxy, event)
   }
-
+   //
   $.fn.delegate = function(selector, event, callback){
     return this.on(event, selector, callback)
   }
@@ -1363,9 +1370,12 @@ window.$ === undefined && (window.$ = Zepto)
   })
 
   $.Event = function(type, props) {
+    // 如果接受到的参数是一个{}, 则 对应的属性赋值给对应的参数。
     if (!isString(type)) props = type, type = props.type
+    // 创建一个指定类型的事件，传入参数是字符串类型，默认情况下 bubble 为true
     var event = document.createEvent(specialEvents[type] || 'Events'), bubbles = true
     if (props) for (var name in props) (name == 'bubbles') ? (bubbles = !!props[name]) : (event[name] = props[name])
+    // 定义事件名为 type，
     event.initEvent(type, bubbles, true)
     return compatible(event)
   }
