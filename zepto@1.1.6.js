@@ -1209,7 +1209,7 @@ window.$ === undefined && (window.$ = Zepto)
   $.fn.unbind = function(event, callback){
     return this.off(event, callback)
   }
-  // 绑定一次就解除绑定，调用on方法，最后传入 1 
+  // 绑定一次就解除绑定，调用on方法，最后传入 1 ，
   $.fn.one = function(event, selector, data, callback){
     return this.on(event, selector, data, callback, 1)
   }
@@ -1311,12 +1311,13 @@ window.$ === undefined && (window.$ = Zepto)
       return $this
     }
 
-    if (!isString(selector) && !isFunction(callback) && callback !== false)
+    if (!isString(selector) && !isFunction(callback) && callback !== false)  // 没有错传入选择器，则将对应的元素后移
       callback = selector, selector = undefined
 
-    if (callback === false) callback = returnFalse
+    if (callback === false) callback = returnFalse    // 也没有传入回调函数，直接返回false， 不执行操作
 
     return $this.each(function(){
+       //对zepto 数组中的每个引用元素分别执行remove 操作
       remove(this, event, callback, selector)
     })
   }
