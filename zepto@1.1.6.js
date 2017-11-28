@@ -1329,6 +1329,7 @@ window.$ === undefined && (window.$ = Zepto)
     })
   }
 
+// review
   $.fn.trigger = function(event, args){
     event = (isString(event) || $.isPlainObject(event)) ? $.Event(event) : compatible(event)
     event._args = args
