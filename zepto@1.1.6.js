@@ -89,6 +89,7 @@ var Zepto = (function() {
            .replace(/([a-z\d])([A-Z])/g, '$1_$2')
            .replace(/_/g, '-')
            .toLowerCase()
+    // 除去 A-Z 的下划线，  并且把下划线替换成 - 横杆
   }
 
    // 利用filter 实现数组去重
